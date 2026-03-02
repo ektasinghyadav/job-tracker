@@ -52,6 +52,10 @@ const jobSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Text index for MongoDB fallback search (used when Pinecone is not configured)
+// Allows $text queries across company, position, and jobDescription fields
+jobSchema.index({ company: 'text', position: 'text', jobDescription: 'text' });
+
 const Job = mongoose.model('Job', jobSchema);
 
 module.exports = Job;

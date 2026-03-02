@@ -13,12 +13,14 @@ const authMiddleware = (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Add user id to request object
+    // Attach user id to request so routes can use it
     req.userId = decoded.userId;
-    
-    console.log('User authenticated:', req.userId);
-    
-    // Continue to next middleware/route
+
+    // Only log in development — avoids leaking user IDs in production logs
+    if (process.env.NODE_ENV === 'development') {
+      console.log('User authenticated:', req.userId);
+    }
+
     next();
   } catch (error) {
     console.log('Authentication error:', error.message);

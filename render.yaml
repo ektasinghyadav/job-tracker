@@ -1,0 +1,43 @@
+# Render Blueprint — JobTracker AI backend
+# Docs: https://render.com/docs/blueprint-spec
+#
+# This file lets Render auto-configure the service from the repo.
+# Secrets (marked sync: false) must be entered manually in the Render dashboard.
+
+services:
+  - type: web
+    name: job-tracker-backend
+    env: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+
+    envVars:
+      # ── Non-secret config ────────────────────────────────
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 5000
+
+      - key: PINECONE_INDEX_NAME
+        value: job-tracker
+
+      # ── Secrets: set these in the Render dashboard ───────
+      # Dashboard → job-tracker-backend → Environment → Add Env Var
+
+      - key: MONGODB_URI
+        sync: false   # Your MongoDB Atlas connection string
+
+      - key: JWT_SECRET
+        sync: false   # 64-char random string (see .env.example for generator command)
+
+      - key: FRONTEND_URL
+        sync: false   # Your Vercel URL, e.g. https://job-tracker-xyz.vercel.app
+
+      - key: HF_API_KEY
+        sync: false   # From https://huggingface.co/settings/tokens
+
+      - key: PINECONE_API_KEY
+        sync: false   # From https://app.pinecone.io

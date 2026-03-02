@@ -60,6 +60,13 @@ const validateConfig = () => {
     process.exit(1);
   }
 
+  // Warn about weak JWT secret (Sprint 7 security audit)
+  const jwtSecret = process.env.JWT_SECRET || '';
+  if (jwtSecret.length < 32) {
+    console.warn('⚠️  JWT_SECRET is too short (minimum 32 characters recommended).');
+    console.warn('   Generate a strong secret with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+  }
+
   console.log('✅ Configuration validated successfully');
   console.log(`   - Environment: ${config.server.nodeEnv}`);
   console.log(`   - Port: ${config.server.port}`);

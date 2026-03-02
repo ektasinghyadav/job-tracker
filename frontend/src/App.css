@@ -406,6 +406,456 @@ body {
   }
 }
 
+/* ─── Sprint 6: Semantic Search Bar ─────────────────────── */
+
+.search-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+.search-input {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+.search-input:focus {
+  outline: none;
+  border-color: #621B00;
+}
+.search-btn {
+  padding: 0.7rem 1.25rem;
+  background: #621B00;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.search-btn:hover:not(:disabled)  { background: #4a1400; }
+.search-btn:disabled               { opacity: 0.7; cursor: not-allowed; }
+.search-clear {
+  padding: 0.7rem 1rem;
+  background: #f0f0f0;
+  color: #555;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+.search-clear:hover { background: #e0e0e0; }
+
+.search-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.search-count       { color: #555; }
+.search-error-msg   { color: #e74c3c; }
+.search-mode-badge  {
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.badge-vector { background: #e8f4fd; color: #2980b9; }
+.badge-text   { background: #f0f0f0; color: #666; }
+
+/* ─── Sprint 6: AI Tools button on job card ─────────────── */
+
+.btn-ai {
+  padding: 0.5rem 1rem;
+  background: #f8f0ff;
+  color: #621B00;
+  border: 1px solid #d4b0ff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-ai:hover      { background: #ecdeff; border-color: #b07fdd; }
+.btn-ai-active     { background: #621B00; color: white; border-color: #621B00; }
+.btn-ai-active:hover { background: #4a1400; }
+
+/* ─── Sprint 6: AI Panel ─────────────────────────────────── */
+
+.ai-panel {
+  margin-top: 1rem;
+  border-top: 1px solid #f0e0ff;
+  padding-top: 1rem;
+}
+.ai-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.ai-panel-badge {
+  background: #621B00;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.ai-panel-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+/* Feature tab row */
+.ai-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.ai-tab {
+  padding: 0.35rem 0.85rem;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background: white;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.15s;
+}
+.ai-tab:hover:not(.ai-tab-disabled) {
+  border-color: #621B00;
+  color: #621B00;
+}
+.ai-tab-active {
+  background: #621B00;
+  color: white;
+  border-color: #621B00;
+}
+.ai-tab-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ai-no-desc {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-bottom: 0.5rem;
+  font-style: italic;
+}
+
+/* Result box */
+.ai-result-box {
+  background: #fafafa;
+  border: 1px solid #f0e0ff;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 0.25rem;
+}
+.ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #888;
+  font-size: 0.88rem;
+}
+.ai-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ddd;
+  border-top-color: #621B00;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ai-error {
+  color: #e74c3c;
+  font-size: 0.88rem;
+}
+.ai-result-hint {
+  font-size: 0.78rem;
+  color: #aaa;
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+/* Advice result */
+.ai-advice-text {
+  font-size: 0.92rem;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* Bullet / question list */
+.ai-bullet-list {
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ai-bullet-item {
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* Interview prep grid */
+.ai-prep-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.ai-prep-section { display: flex; flex-direction: column; gap: 0.4rem; }
+.ai-prep-heading {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #621B00;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.ai-prep-list {
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.ai-prep-list li { font-size: 0.85rem; color: #444; line-height: 1.4; }
+.ai-prep-takeaway {
+  grid-column: 1 / -1;
+  background: #fff8f0;
+  border-left: 3px solid #f39c12;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0 4px 4px 0;
+}
+.ai-prep-takeaway p { font-size: 0.88rem; color: #555; line-height: 1.5; }
+
+@media (max-width: 500px) {
+  .ai-prep-grid { grid-template-columns: 1fr; }
+}
+
+/* ─── Sprint 5: Analytics Dashboard ─────────────────────── */
+
+.dashboard-subtitle {
+  color: #888;
+  margin-top: -1.25rem;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+.loading-state {
+  text-align: center;
+  color: #999;
+  padding: 3rem;
+  font-size: 1rem;
+}
+
+.dash-section {
+  margin-bottom: 2.5rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid #f0e0e0;
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #621B00;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0;
+}
+.btn-link:hover { text-decoration: underline; }
+
+/* Generic analytics card (white box with shadow) */
+.analytics-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+}
+
+.card-subtitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+}
+
+/* Pipeline velocity: 2-column grid */
+.velocity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Metric label + value row */
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+.metric-label { font-size: 0.9rem; color: #555; }
+.metric-value  { font-size: 1rem; font-weight: 700; }
+
+/* CSS progress bar */
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+/* Health number boxes */
+.health-number-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.health-number {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+.health-number-val {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #621B00;
+}
+.health-number-label {
+  font-size: 0.75rem;
+  color: #888;
+  text-align: center;
+  line-height: 1.2;
+}
+.stale-warning {
+  font-size: 0.85rem;
+  color: #e74c3c;
+  background: #fff5f5;
+  border-left: 3px solid #e74c3c;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0 4px 4px 0;
+  margin-top: 0.5rem;
+}
+
+/* Insights grid: up to 2 columns, wraps naturally */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Insight lists */
+.insight-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: #444;
+  line-height: 1.4;
+}
+.insight-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.dot-red    { background: #e74c3c; }
+.dot-blue   { background: #3498db; }
+.dot-green  { background: #2ecc71; }
+.dot-orange { background: #f39c12; }
+
+.insight-msg    { font-weight: 500; }
+.insight-action { font-size: 0.82rem; color: #888; margin-top: 0.2rem; }
+
+/* Slight left border accent per insight type */
+.insight-priorities  { border-left: 3px solid #e74c3c; }
+.insight-actions     { border-left: 3px solid #3498db; }
+.insight-strengths   { border-left: 3px solid #2ecc71; }
+.insight-improvements{ border-left: 3px solid #f39c12; }
+
+/* Recent applications list */
+.recent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 0;
+}
+.recent-item-border {
+  border-bottom: 1px solid #f5f5f5;
+}
+.recent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.recent-company  { font-weight: 600; color: #333; font-size: 0.95rem; }
+.recent-position { font-size: 0.85rem; color: #666; }
+.recent-location { font-size: 0.78rem; color: #aaa; }
+.recent-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.recent-days {
+  font-size: 0.8rem;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+/* Responsive: stack velocity grid on mobile */
+@media (max-width: 640px) {
+  .velocity-grid        { grid-template-columns: 1fr; }
+  .health-number-grid   { grid-template-columns: repeat(3, 1fr); }
+  .insights-grid        { grid-template-columns: 1fr; }
+}
+
 /* Footer */
 .footer-credit {
   text-align: center;

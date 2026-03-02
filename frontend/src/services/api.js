@@ -130,5 +130,120 @@ export const jobAPI = {
   }
 };
 
-// TODO: Add error interceptor for better error handling
-// TODO: Add loading states
+// AI API calls — Sprint 6
+export const aiAPI = {
+  // Personalized next-step advice for a specific job
+  getAdvice: async (jobId) => {
+    try {
+      const response = await axios.post(`${API_URL}/ai/advice`, { jobId }, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to get advice' };
+    }
+  },
+
+  // Resume bullet points tailored to a job description
+  getResumeBullets: async (jobDescription, userExperience = '') => {
+    try {
+      const response = await axios.post(`${API_URL}/ai/resume-bullets`,
+        { jobDescription, userExperience },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to generate resume bullets' };
+    }
+  },
+
+  // Interview preparation guide
+  getInterviewPrep: async (jobDescription, company) => {
+    try {
+      const response = await axios.post(`${API_URL}/ai/interview-prep`,
+        { jobDescription, company },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to generate interview prep' };
+    }
+  },
+
+  // Predicted interview questions for a company and role
+  getQuestions: async (company, position) => {
+    try {
+      const response = await axios.post(`${API_URL}/ai/questions`,
+        { company, position },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to predict questions' };
+    }
+  },
+
+  // Semantic search over job descriptions
+  search: async (query, limit = 5) => {
+    try {
+      const response = await axios.post(`${API_URL}/ai/search`,
+        { query, limit },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Search failed' };
+    }
+  }
+};
+
+// Analytics API calls — Sprint 5
+export const analyticsAPI = {
+  // Pipeline velocity: conversion rates, response times, stale count
+  getVelocity: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/analytics/velocity`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to fetch velocity' };
+    }
+  },
+
+  // Actionable insights: priorities, strengths, improvements, next actions
+  getInsights: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/analytics/insights`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to fetch insights' };
+    }
+  },
+
+  // Health score for a single job application
+  getHealth: async (jobId) => {
+    try {
+      const response = await axios.get(`${API_URL}/analytics/health/${jobId}`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to fetch health score' };
+    }
+  },
+
+  // Offer probability prediction for a single job
+  predict: async (jobId) => {
+    try {
+      const response = await axios.get(`${API_URL}/analytics/predict/${jobId}`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Failed to fetch prediction' };
+    }
+  }
+};

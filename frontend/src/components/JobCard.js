@@ -1,27 +1,25 @@
-// JobCard component - displays single job application
-import React from 'react';
+// JobCard component — Sprint 6: added AI Tools toggle
+import React, { useState } from 'react';
+import AIPanel from './AIPanel';
 
 function JobCard({ job, onEdit, onDelete }) {
-  // Format date for display
+  const [showAI, setShowAI] = useState(false);
+
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric'
     });
   };
 
-  // Get status class for styling
   const getStatusClass = (status) => {
-    const statusMap = {
-      'Applied': 'status-applied',
+    const map = {
+      'Applied':             'status-applied',
       'Interview Scheduled': 'status-interview',
-      'Offer': 'status-offer',
-      'Rejected': 'status-rejected',
-      'Withdrawn': 'status-rejected'
+      'Offer':               'status-offer',
+      'Rejected':            'status-rejected',
+      'Withdrawn':           'status-rejected'
     };
-    return statusMap[status] || 'status-applied';
+    return map[status] || 'status-applied';
   };
 
   return (
@@ -48,25 +46,21 @@ function JobCard({ job, onEdit, onDelete }) {
             </a>
           </p>
         )}
-        {job.notes && (
-          <p><strong>Notes:</strong> {job.notes}</p>
-        )}
+        {job.notes && <p><strong>Notes:</strong> {job.notes}</p>}
       </div>
 
       <div className="job-actions">
-        <button 
-          className="btn-edit"
-          onClick={() => onEdit(job)}
+        <button className="btn-edit"   onClick={() => onEdit(job)}>Edit</button>
+        <button className="btn-delete" onClick={() => onDelete(job._id)}>Delete</button>
+        <button
+          className={`btn-ai ${showAI ? 'btn-ai-active' : ''}`}
+          onClick={() => setShowAI(prev => !prev)}
         >
-          Edit
-        </button>
-        <button 
-          className="btn-delete"
-          onClick={() => onDelete(job._id)}
-        >
-          Delete
+          {showAI ? 'Close AI' : '✦ AI Tools'}
         </button>
       </div>
+
+      {showAI && <AIPanel job={job} />}
     </div>
   );
 }

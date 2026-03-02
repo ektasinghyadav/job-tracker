@@ -1,103 +1,150 @@
-// Jobs page - list and manage job applications
+// Jobs page — Sprint 6: added semantic search bar + AI Tools on each card
 import React, { useState, useEffect } from 'react';
-import { jobAPI } from '../services/api';
+import { jobAPI, aiAPI } from '../services/api';
 import JobCard from '../components/JobCard';
 import JobForm from '../components/JobForm';
 
 function Jobs({ onNavigate, user }) {
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingJob, setEditingJob] = useState(null);
+  const [jobs, setJobs]               = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [showForm, setShowForm]       = useState(false);
+  const [editingJob, setEditingJob]   = useState(null);
 
-  // Fetch all jobs when component loads
-  useEffect(() => {
-    fetchJobs();
-  }, []);
+  // Semantic search state
+  const [searchQuery, setSearchQuery]     = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchMode, setSearchMode]       = useState(null);   // 'vector' | 'text' | null
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError]     = useState('');
+
+  useEffect(() => { fetchJobs(); }, []);
 
   const fetchJobs = async () => {
     try {
-      console.log('Fetching jobs...');
       const data = await jobAPI.getAll();
       setJobs(data);
-      console.log('Jobs loaded:', data.length);
     } catch (error) {
-      console.log('Error fetching jobs:', error);
       alert('Failed to load jobs. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle adding new job
+  // ── Semantic search ────────────────────────────────────────
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setSearchLoading(true);
+    setSearchError('');
+    setIsSearchActive(true);
+
+    try {
+      const data = await aiAPI.search(searchQuery.trim(), 10);
+      setSearchResults(data.results);
+      setSearchMode(data.mode);
+    } catch (err) {
+      setSearchError(err.error || 'Search failed. Please try again.');
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchMode(null);
+    setIsSearchActive(false);
+    setSearchError('');
+  };
+
+  // ── CRUD handlers ──────────────────────────────────────────
   const handleAddJob = async (jobData) => {
     try {
-      console.log('Adding new job...');
       await jobAPI.create(jobData);
       setShowForm(false);
-      fetchJobs(); // Refresh list
+      fetchJobs();
       alert('Job application added successfully!');
     } catch (error) {
-      console.log('Error adding job:', error);
       alert(error.error || 'Failed to add job. Please try again.');
     }
   };
 
-  // Handle updating job
   const handleUpdateJob = async (jobData) => {
     try {
-      console.log('Updating job...');
       await jobAPI.update(editingJob._id, jobData);
       setShowForm(false);
       setEditingJob(null);
-      fetchJobs(); // Refresh list
+      fetchJobs();
+      if (isSearchActive) clearSearch();   // Reset search so updated job shows correctly
       alert('Job application updated successfully!');
     } catch (error) {
-      console.log('Error updating job:', error);
       alert(error.error || 'Failed to update job. Please try again.');
     }
   };
 
-  // Handle deleting job
   const handleDeleteJob = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this job application?')) {
-      return;
-    }
-
+    if (!window.confirm('Are you sure you want to delete this job application?')) return;
     try {
-      console.log('Deleting job:', id);
       await jobAPI.delete(id);
-      fetchJobs(); // Refresh list
+      fetchJobs();
+      if (isSearchActive) clearSearch();
       alert('Job application deleted successfully!');
     } catch (error) {
-      console.log('Error deleting job:', error);
       alert(error.error || 'Failed to delete job. Please try again.');
     }
   };
 
-  // Open form for editing
-  const handleEditClick = (job) => {
-    console.log('Editing job:', job.company);
-    setEditingJob(job);
-    setShowForm(true);
-  };
+  const handleEditClick = (job) => { setEditingJob(job); setShowForm(true); };
+  const handleAddClick  = () => { setEditingJob(null); setShowForm(true); };
+  const handleCloseForm = () => { setShowForm(false); setEditingJob(null); };
 
-  // Open form for adding new
-  const handleAddClick = () => {
-    console.log('Opening form for new job');
-    setEditingJob(null);
-    setShowForm(true);
-  };
-
-  // Close form
-  const handleCloseForm = () => {
-    console.log('Closing form');
-    setShowForm(false);
-    setEditingJob(null);
-  };
+  // Jobs to display — search results or all jobs
+  const displayJobs = isSearchActive ? searchResults : jobs;
 
   return (
     <div className="jobs-page">
+
+      {/* ── Search bar ──────────────────────────────────────── */}
+      <form className="search-bar" onSubmit={handleSearch}>
+        <input
+          className="search-input"
+          type="text"
+          placeholder="Search by skills, role, company, or keywords..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <button className="search-btn" type="submit" disabled={searchLoading}>
+          {searchLoading ? 'Searching...' : 'Search'}
+        </button>
+        {isSearchActive && (
+          <button className="search-clear" type="button" onClick={clearSearch}>
+            Clear
+          </button>
+        )}
+      </form>
+
+      {/* Search status badges */}
+      {isSearchActive && !searchLoading && (
+        <div className="search-status">
+          {searchError ? (
+            <span className="search-error-msg">{searchError}</span>
+          ) : (
+            <>
+              <span className="search-count">
+                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+              </span>
+              <span className={`search-mode-badge ${searchMode === 'vector' ? 'badge-vector' : 'badge-text'}`}>
+                {searchMode === 'vector' ? '⚡ Semantic Search' : '🔤 Text Search'}
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Page header ─────────────────────────────────────── */}
       <div className="jobs-header">
         <h1>My Job Applications</h1>
         <button className="btn btn-primary" onClick={handleAddClick}>
@@ -105,16 +152,19 @@ function Jobs({ onNavigate, user }) {
         </button>
       </div>
 
+      {/* ── Jobs list ───────────────────────────────────────── */}
       {loading ? (
         <p>Loading jobs...</p>
-      ) : jobs.length === 0 ? (
+      ) : displayJobs.length === 0 ? (
         <div className="empty-state">
-          <p>No job applications yet!</p>
-          <p>Click "Add New Job" to track your first application.</p>
+          {isSearchActive
+            ? <p>No results found for "{searchQuery}". Try different keywords.</p>
+            : <><p>No job applications yet!</p><p>Click "Add New Job" to track your first application.</p></>
+          }
         </div>
       ) : (
         <div className="jobs-grid">
-          {jobs.map((job) => (
+          {displayJobs.map((job) => (
             <JobCard
               key={job._id}
               job={job}
@@ -125,7 +175,6 @@ function Jobs({ onNavigate, user }) {
         </div>
       )}
 
-      {/* Job Form Modal */}
       {showForm && (
         <JobForm
           job={editingJob}
@@ -138,7 +187,3 @@ function Jobs({ onNavigate, user }) {
 }
 
 export default Jobs;
-
-// TODO: Add search functionality
-// TODO: Add filter by status
-// TODO: Add sorting options

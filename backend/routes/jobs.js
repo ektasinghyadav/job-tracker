@@ -3,6 +3,7 @@ const router = express.Router();
 const Job = require('../models/Job');
 const authMiddleware = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const ragService = require('../services/rag.service');
 
 // All routes require authentication
 router.use(authMiddleware);
@@ -63,6 +64,11 @@ router.post('/', asyncHandler(async (req, res) => {
   });
 
   await job.save();
+
+  // Fire-and-forget: generate embedding and store in Pinecone
+  // We don't await this — the job is already saved, embedding is supplementary
+  ragService.upsertJobEmbedding(job).catch(() => {});
+
   res.status(201).json(job);
 }));
 
@@ -80,6 +86,9 @@ router.put('/:id', asyncHandler(async (req, res) => {
     return res.status(404).json({ error: 'Job not found' });
   }
 
+  // Fire-and-forget: re-embed if jobDescription was part of the update
+  ragService.upsertJobEmbedding(job).catch(() => {});
+
   res.json(job);
 }));
 
@@ -90,6 +99,9 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   if (!job) {
     return res.status(404).json({ error: 'Job not found' });
   }
+
+  // Fire-and-forget: remove the embedding from Pinecone
+  ragService.deleteJobEmbedding(job._id).catch(() => {});
 
   res.json({ message: 'Job deleted successfully' });
 }));
