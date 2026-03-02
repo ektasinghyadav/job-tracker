@@ -25,8 +25,24 @@ app.use(compression());
 // 'dev' format in development (colorized, concise)
 app.use(morgan(config.server.nodeEnv === 'production' ? 'combined' : 'dev'));
 
-// ── CORS — only allow requests from the configured frontend URL ──
-app.use(cors({ origin: config.cors.origin, credentials: true }));
+// ── CORS — allow Vercel frontend + localhost dev ──────────
+// Uses an array so both production and local dev always work,
+// regardless of which FRONTEND_URL value is set on Render.
+const allowedOrigins = [
+  config.cors.origin,          // from FRONTEND_URL env var
+  'http://localhost:3000',
+  'http://localhost:3001'
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true
+}));
 
 // ── Parse JSON bodies with a 10kb limit (Sprint 7) ───────
 // The default is 100kb — 10kb is more than enough for our API payloads.
