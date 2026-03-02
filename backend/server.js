@@ -25,20 +25,22 @@ app.use(compression());
 // 'dev' format in development (colorized, concise)
 app.use(morgan(config.server.nodeEnv === 'production' ? 'combined' : 'dev'));
 
-// ── CORS — allow Vercel frontend + localhost dev ──────────
-// Uses an array so both production and local dev always work,
-// regardless of which FRONTEND_URL value is set on Render.
+// ── CORS ──────────────────────────────────────────────────
+// Hardcode the Vercel URL + read from env var + allow localhost.
+// Trailing slashes are stripped to prevent subtle mismatches.
 const allowedOrigins = [
-  config.cors.origin,          // from FRONTEND_URL env var
+  'https://job-tracker-inky-eta.vercel.app',  // production frontend (hardcoded)
+  config.cors.origin,                          // FRONTEND_URL env var (Render)
   'http://localhost:3000',
   'http://localhost:3001'
-].filter(Boolean);
+].filter(Boolean).map(o => o.replace(/\/+$/, ''));  // strip any trailing slash
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (curl, Postman, server-to-server)
+    // Allow requests with no origin (curl, Postman, mobile apps)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    const clean = origin.replace(/\/+$/, '');
+    if (allowedOrigins.includes(clean)) return callback(null, true);
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true
