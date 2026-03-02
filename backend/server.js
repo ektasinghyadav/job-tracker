@@ -1,6 +1,5 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -26,25 +25,26 @@ app.use(compression());
 app.use(morgan(config.server.nodeEnv === 'production' ? 'combined' : 'dev'));
 
 // ── CORS ──────────────────────────────────────────────────
-// Hardcode the Vercel URL + read from env var + allow localhost.
-// Trailing slashes are stripped to prevent subtle mismatches.
+// Set headers manually — more reliable than the cors package
+// across different hosting environments.
 const allowedOrigins = [
-  'https://job-tracker-inky-eta.vercel.app',  // production frontend (hardcoded)
-  config.cors.origin,                          // FRONTEND_URL env var (Render)
+  'https://job-tracker-inky-eta.vercel.app',
+  config.cors.origin,
   'http://localhost:3000',
   'http://localhost:3001'
-].filter(Boolean).map(o => o.replace(/\/+$/, ''));  // strip any trailing slash
+].filter(Boolean).map(o => o.replace(/\/+$/, ''));
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (curl, Postman, mobile apps)
-    if (!origin) return callback(null, true);
-    const clean = origin.replace(/\/+$/, '');
-    if (allowedOrigins.includes(clean)) return callback(null, true);
-    callback(new Error(`CORS: origin ${origin} not allowed`));
-  },
-  credentials: true
-}));
+app.use((req, res, next) => {
+  const origin = (req.headers.origin || '').replace(/\/+$/, '');
+  if (!origin || allowedOrigins.includes(origin)) {
+    if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  }
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  next();
+});
 
 // ── Parse JSON bodies with a 10kb limit (Sprint 7) ───────
 // The default is 100kb — 10kb is more than enough for our API payloads.
@@ -77,7 +77,7 @@ mongoose.connect(config.mongodb.uri)
 
 // ── Health check ─────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.json({ message: 'JobTracker AI API is running!', version: '4.1' });
+  res.json({ message: 'JobTracker AI API is running!', version: '4.2' });
 });
 
 // ── Routes ────────────────────────────────────────────────
