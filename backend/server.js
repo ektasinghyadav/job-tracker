@@ -75,7 +75,7 @@ mongoose.connect(config.mongodb.uri)
 
 // ── Health check ─────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.json({ message: 'JobTracker AI API is running!', version: '4.0' });
+  res.json({ message: 'JobTracker AI API is running!', version: '4.1' });
 });
 
 // ── Routes ────────────────────────────────────────────────
