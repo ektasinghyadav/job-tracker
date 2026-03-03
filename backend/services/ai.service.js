@@ -2,7 +2,6 @@
 // Uses mistralai/Mistral-7B-Instruct-v0.2 via the @huggingface/inference SDK
 // Falls back to mock responses if the API fails (keeps the app working always)
 
-const { HfInference } = require('@huggingface/inference');
 const config = require('../config/config');
 
 class AIService {
@@ -10,8 +9,8 @@ class AIService {
     this.isHFEnabled = config.ai.huggingface.enabled;
 
     if (this.isHFEnabled) {
-      this.hf = new HfInference(config.ai.huggingface.apiKey);
-      this.model = 'mistralai/Mistral-7B-Instruct-v0.2';
+      this.apiKey = config.ai.huggingface.apiKey;
+      this.model = 'Qwen/Qwen2.5-7B-Instruct';
       console.log(`🤖 AI Service initialized — Hugging Face LIVE (model: ${this.model})`);
     } else {
       console.log('🤖 AI Service initialized — MOCK mode (add HF_API_KEY to .env to enable real AI)');
@@ -28,7 +27,7 @@ class AIService {
       try {
         return await this._hfResumeBullets(jobDescription, userExperience);
       } catch (err) {
-        console.error('⚠️  HF resume bullets failed, using mock:', err.message);
+        console.error('⚠️  HF resume bullets failed, using mock:', err.message, `[status: ${err.status ?? err.statusCode ?? err.cause?.status ?? 'n/a'}] ${err.cause?.message ?? ''}`);
       }
     }
     return this._mockBullets(jobDescription);
@@ -40,7 +39,7 @@ class AIService {
       try {
         return await this._hfInterviewPrep(jobDescription, company);
       } catch (err) {
-        console.error('⚠️  HF interview prep failed, using mock:', err.message);
+        console.error('⚠️  HF interview prep failed, using mock:', err.message, `[status: ${err.status ?? err.statusCode ?? err.cause?.status ?? 'n/a'}] ${err.cause?.message ?? ''}`);
       }
     }
     return this._mockInterviewPrep(jobDescription, company);
@@ -52,7 +51,7 @@ class AIService {
       try {
         return await this._hfInterviewQuestions(company, position);
       } catch (err) {
-        console.error('⚠️  HF interview questions failed, using mock:', err.message);
+        console.error('⚠️  HF interview questions failed, using mock:', err.message, `[status: ${err.status ?? err.statusCode ?? err.cause?.status ?? 'n/a'}] ${err.cause?.message ?? ''}`);
       }
     }
     return this._mockQuestions(company, position);
@@ -64,7 +63,7 @@ class AIService {
       try {
         return await this._hfApplicationAdvice(jobData);
       } catch (err) {
-        console.error('⚠️  HF application advice failed, using mock:', err.message);
+        console.error('⚠️  HF application advice failed, using mock:', err.message, `[status: ${err.status ?? err.statusCode ?? err.cause?.status ?? 'n/a'}] ${err.cause?.message ?? ''}`);
       }
     }
     return this._mockAdvice(jobData);
@@ -74,20 +73,59 @@ class AIService {
   // PRIVATE: Hugging Face API callers
   // ============================================
 
-  // Wraps every HF call — sets common parameters and extracts generated_text
+  // Wraps every HF call — 30s timeout + 2 retries for transient network failures
   async _callHF(prompt, maxTokens = 512) {
-    const response = await this.hf.textGeneration({
-      model: this.model,
-      // Mistral instruct format: <s>[INST] instruction [/INST]
-      inputs: `<s>[INST] ${prompt} [/INST]`,
-      parameters: {
-        max_new_tokens: maxTokens,
-        temperature: 0.7,
-        top_p: 0.9,
-        return_full_text: false   // Only return the newly generated part
+    const MAX_RETRIES = 2;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30000);
+
+      try {
+        const res = await fetch(
+          `https://router.huggingface.co/v1/chat/completions`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${this.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: this.model,
+              messages: [{ role: 'user', content: prompt }],
+              max_tokens: maxTokens,
+              temperature: 0.7,
+              top_p: 0.9,
+            }),
+            signal: controller.signal,
+          }
+        );
+
+        clearTimeout(timer);
+
+        if (!res.ok) {
+          const body = await res.text().catch(() => '');
+          const err = new Error(`HTTP ${res.status}: ${body}`);
+          err.status = res.status;
+          throw err;
+        }
+
+        const data = await res.json();
+        return data.choices[0].message.content.trim();
+
+      } catch (err) {
+        clearTimeout(timer);
+        const isNetworkError = err.name === 'AbortError' || err.message.includes('fetch failed') || err.message.includes('Connect Timeout') || err.code === 'ECONNRESET';
+
+        if (isNetworkError && attempt <= MAX_RETRIES) {
+          console.warn(`⚠️  HF attempt ${attempt} timed out, retrying in ${attempt}s...`);
+          await new Promise(r => setTimeout(r, attempt * 1000));
+          continue;
+        }
+
+        throw err;
       }
-    });
-    return response.generated_text.trim();
+    }
   }
 
   async _hfResumeBullets(jobDescription, userExperience) {

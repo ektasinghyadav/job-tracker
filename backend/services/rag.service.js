@@ -107,16 +107,24 @@ class RAGService {
   // Returns an array of job objects from MongoDB
   // ─────────────────────────────────────────────────────────
   async semanticSearch(queryText, userId, topK = 5) {
+    // Step 1: exact match on company + position (fast, no false positives)
+    const exactMatches = await this._mongoTextSearch(queryText, userId, topK);
+    if (exactMatches.length > 0) {
+      return exactMatches;
+    }
+
+    // Step 2: no exact match — try Pinecone for semantic similarity
     if (this.isFullyEnabled) {
       try {
-        return await this._pineconeSearch(queryText, userId, topK);
+        const vectorResults = await this._pineconeSearch(queryText, userId, topK);
+        if (vectorResults.length > 0) return vectorResults;
       } catch (err) {
-        console.error('⚠️  Pinecone search failed, falling back to MongoDB:', err.message);
+        console.error('⚠️  Pinecone search failed:', err.message);
       }
     }
 
-    // Fallback: MongoDB text search
-    return this._mongoTextSearch(queryText, userId, topK);
+    // Step 3: Pinecone unavailable/failed — search inside job descriptions too
+    return this._mongoDescriptionSearch(queryText, userId, topK);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -158,13 +166,22 @@ class RAGService {
       return [];
     }
 
+    // Filter out low-confidence matches — below 0.80 means the result is
+    // only loosely related (e.g. a different company in the same industry)
+    const SIMILARITY_THRESHOLD = 0.70;
+    const relevantMatches = results.matches.filter(m => m.score >= SIMILARITY_THRESHOLD);
+
+    if (relevantMatches.length === 0) {
+      return [];
+    }
+
     // 3. Fetch full job documents from MongoDB using the IDs from Pinecone
-    const jobIds = results.matches.map(m => m.metadata.jobId);
+    const jobIds = relevantMatches.map(m => m.metadata.jobId);
     const jobs = await Job.find({ _id: { $in: jobIds }, userId });
 
     // 4. Re-order jobs to match Pinecone's relevance ranking
     const idToScore = {};
-    results.matches.forEach(m => { idToScore[m.metadata.jobId] = m.score; });
+    relevantMatches.forEach(m => { idToScore[m.metadata.jobId] = m.score; });
 
     return jobs
       .map(job => ({ ...job.toObject(), similarityScore: idToScore[job._id.toString()] }))
@@ -172,21 +189,40 @@ class RAGService {
   }
 
   // ─────────────────────────────────────────────────────────
-  // PRIVATE: MongoDB text search (fallback when no Pinecone)
-  // Requires the text index defined in Job model
+  // PRIVATE: Exact match on company + position only
+  // Used as the first pass — precise, no false positives
   // ─────────────────────────────────────────────────────────
   async _mongoTextSearch(queryText, userId, topK) {
-    const jobs = await Job.find(
-      { userId, $text: { $search: queryText } },
-      { score: { $meta: 'textScore' } }
-    )
-      .sort({ score: { $meta: 'textScore' } })
-      .limit(topK);
+    const regex = new RegExp(queryText.trim(), 'i');
 
-    return jobs.map(job => ({
-      ...job.toObject(),
-      similarityScore: job._doc?.score ?? null
-    }));
+    const jobs = await Job.find({
+      userId,
+      $or: [
+        { company: regex },
+        { position: regex }
+      ]
+    }).limit(topK);
+
+    return jobs.map(job => ({ ...job.toObject(), similarityScore: null }));
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // PRIVATE: Broader keyword search including job description
+  // Used as last resort when Pinecone is unavailable
+  // ─────────────────────────────────────────────────────────
+  async _mongoDescriptionSearch(queryText, userId, topK) {
+    const regex = new RegExp(queryText.trim(), 'i');
+
+    const jobs = await Job.find({
+      userId,
+      $or: [
+        { company: regex },
+        { position: regex },
+        { jobDescription: regex }
+      ]
+    }).limit(topK);
+
+    return jobs.map(job => ({ ...job.toObject(), similarityScore: null }));
   }
 
   // ─────────────────────────────────────────────────────────

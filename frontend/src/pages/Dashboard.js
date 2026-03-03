@@ -1,5 +1,5 @@
 // Dashboard page — Sprint 5: Full analytics dashboard
-// Shows: application summary, pipeline velocity, insights, recent applications
+// Shows: application summary, application progress, insights, recent applications
 
 import React, { useState, useEffect } from 'react';
 import { jobAPI, analyticsAPI } from '../services/api';
@@ -114,10 +114,10 @@ function Dashboard({ onNavigate, user }) {
         </div>
       ) : (
         <>
-          {/* ── Section 2: Pipeline Velocity ───────────────── */}
+          {/* ── Section 2: Application Progress ────────────── */}
           {velocity && (
             <section className="dash-section">
-              <h2 className="section-title">Pipeline Velocity</h2>
+              <h2 className="section-title">Application Progress</h2>
               <div className="velocity-grid">
 
                 {/* Conversion rates */}
@@ -149,9 +149,9 @@ function Dashboard({ onNavigate, user }) {
                   <ProgressBar value={velocity.rejectionRate} color="#e74c3c" />
                 </div>
 
-                {/* Pipeline health numbers */}
+                {/* Application status numbers */}
                 <div className="analytics-card">
-                  <h3 className="card-subtitle">Pipeline Health</h3>
+                  <h3 className="card-subtitle">Application Status</h3>
                   <div className="health-number-grid">
                     <div className="health-number">
                       <span className="health-number-val">{velocity.averageResponseTime}</span>

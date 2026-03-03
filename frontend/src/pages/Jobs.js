@@ -137,7 +137,7 @@ function Jobs({ onNavigate, user }) {
                 {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
               </span>
               <span className={`search-mode-badge ${searchMode === 'vector' ? 'badge-vector' : 'badge-text'}`}>
-                {searchMode === 'vector' ? '⚡ Semantic Search' : '🔤 Text Search'}
+                {searchMode === 'vector' ? '⚡ Smart Match' : '🔤 Keyword Match'}
               </span>
             </>
           )}
